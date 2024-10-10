@@ -45,6 +45,11 @@ public class ResourceAnnotations {
     public static final String ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL = STRIMZI_DOMAIN + "rebalance-auto-approval";
 
     /**
+     * Use this boolean annotation to set the KafkaRebalance as a template to be used for auto-rebalancing operations
+     */
+    public static final String ANNO_STRIMZI_IO_REBALANCE_TEMPLATE = STRIMZI_DOMAIN + "rebalance-template";
+
+    /**
      * Annotation which enabled the use of the connector operator
      */
     public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = STRIMZI_DOMAIN + "use-connector-resources";
@@ -73,6 +78,16 @@ public class ResourceAnnotations {
      * Key for specifying which Mirror Maker 2 connector task should be restarted
      */
     public static final String ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK = "task";
+
+    /**
+     * Annotation for connector offsets
+     */
+    public static final String ANNO_STRIMZI_IO_CONNECTOR_OFFSETS = STRIMZI_DOMAIN + "connector-offsets";
+
+    /**
+     * Annotation for identifying MirrorMaker2 connector when managing connector offsets
+     */
+    public static final String ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR = STRIMZI_DOMAIN + "mirrormaker-connector";
 
     /**
      * Annotation for configuring the ranges of node IDs which should be used for

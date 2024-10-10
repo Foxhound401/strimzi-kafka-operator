@@ -81,10 +81,10 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             String.join(",", CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST);
 
     /**
-    * Map containing default values for required configuration properties. The map needs to be sorted so that the order
-    * of the entries in the Cruise Control configuration is deterministic and does not cause unnecessary rolling updates
-    * of Cruise Control deployment.
-    */
+     * Map containing default values for required configuration properties. The map needs to be sorted so that the order
+     * of the entries in the Cruise Control configuration is deterministic and does not cause unnecessary rolling updates
+     * of Cruise Control deployment.
+     */
     private static final Map<String, String> CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP = Collections.unmodifiableSortedMap(new TreeMap<>(Map.ofEntries(
             Map.entry(CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_MS_CONFIG_KEY.getValue(), Integer.toString(300_000)),
             Map.entry(CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(), "1"),
@@ -102,8 +102,8 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             Map.entry(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME)
     )));
 
-    private static final List<String> FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(CruiseControlSpec.FORBIDDEN_PREFIXES);
-    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
+    private static final List<String> FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesOrOptionsToList(CruiseControlSpec.FORBIDDEN_PREFIXES);
+    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
 
     /**
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
@@ -114,7 +114,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
      * @param defaults        Default configuration values
      */
     public CruiseControlConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions, Map<String, String> defaults) {
-        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, defaults);
+        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, List.of(), defaults);
     }
 
     /**

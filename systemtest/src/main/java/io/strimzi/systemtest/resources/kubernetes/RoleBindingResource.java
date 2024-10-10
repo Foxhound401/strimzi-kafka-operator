@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -44,7 +44,7 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
         return resource != null;
     }
 
-    public static void roleBinding(String yamlPath, String namespace, String clientNamespace) {
+    public static void roleBinding(String namespace, String clientNamespace, String yamlPath) {
         LOGGER.info("Creating RoleBinding in test case {} from {} in Namespace: {}",
                 ResourceManager.getTestContext().getDisplayName(), yamlPath, namespace);
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
@@ -60,6 +60,6 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
     }
 
     private static RoleBinding getRoleBindingFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, RoleBinding.class);
+        return ReadWriteUtils.readObjectFromYamlFilepath(yamlPath, RoleBinding.class);
     }
 }

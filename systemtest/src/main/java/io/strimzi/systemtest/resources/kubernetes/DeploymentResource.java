@@ -10,7 +10,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 
 import java.util.function.Consumer;
 
@@ -44,13 +44,13 @@ public class DeploymentResource implements ResourceType<Deployment> {
         return DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }
 
-    public static void replaceDeployment(String deploymentName, Consumer<Deployment> editor, String namespaceName) {
+    public static void replaceDeployment(String namespaceName, Consumer<Deployment> editor, String deploymentName) {
         Deployment toBeReplaced = ResourceManager.kubeClient().getClient().resources(Deployment.class, DeploymentList.class).inNamespace(namespaceName).withName(deploymentName).get();
         editor.accept(toBeReplaced);
         ResourceManager.kubeClient().getClient().resources(Deployment.class, DeploymentList.class).inNamespace(namespaceName).resource(toBeReplaced).update();
     }
 
     public static Deployment getDeploymentFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, Deployment.class);
+        return ReadWriteUtils.readObjectFromYamlFilepath(yamlPath, Deployment.class);
     }
 }

@@ -19,9 +19,9 @@ public class BuildUtils {
 
     /**
      * Gets OpenShift build name based on name and version
-     * @param name
-     * @param version
-     * @return
+     * @param name      Name of the build
+     * @param version   Version of the build
+     * @return  Returns `name-version` build name
      */
     public static String getBuildName(String name, Long version) {
         return name + "-" + version;
@@ -29,17 +29,18 @@ public class BuildUtils {
 
     /**
      * Waits for build status to be complete which indicates successful build.
+     *
+     * @param namespaceName   namespace where the resources are deployed
      * @param buildConfigName name of the corresponding BuildConfig resource
-     * @param namespace namespace where the resources are deployed
      */
-    public static void waitForBuildComplete(String buildConfigName, String namespace) {
+    public static void waitForBuildComplete(String namespaceName, String buildConfigName) {
         LOGGER.info("Waiting for build of {} to be completed", buildConfigName);
 
         TestUtils.waitFor("build " + buildConfigName + " complete", TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
-            Long buildLatestVersion = BuildConfigResource.buildConfigClient().inNamespace(namespace).withName(buildConfigName).get().getStatus().getLastVersion();
+            Long buildLatestVersion = BuildConfigResource.buildConfigClient().inNamespace(namespaceName).withName(buildConfigName).get().getStatus().getLastVersion();
             String buildName = getBuildName(buildConfigName, buildLatestVersion);
 
-            BuildStatus buildStatus = BuildConfigResource.buildsClient().inNamespace(namespace).withName(buildName).get().getStatus();
+            BuildStatus buildStatus = BuildConfigResource.buildsClient().inNamespace(namespaceName).withName(buildName).get().getStatus();
 
             LOGGER.debug("Build status of {} is '{}'", buildName, buildStatus.getPhase());
 

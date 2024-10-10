@@ -4,10 +4,10 @@
  */
 package io.strimzi.systemtest.watcher;
 
+import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Tag;
 import java.util.Arrays;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 
 @Tag(REGRESSION)
 class MultipleNamespaceST extends AbstractNamespaceST {

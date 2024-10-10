@@ -31,9 +31,9 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.strimzi.api.kafka.model.common.Constants;
-import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
@@ -206,21 +206,21 @@ public class EntityOperatorTest {
 
     @ParallelTest
     public void testTemplate() {
-        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
+        Map<String, String> depLabels = Map.of("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
                 Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
         Map<String, String> expectedDepLabels = new HashMap<>(depLabels);
         expectedDepLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
-        Map<String, String> depAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> depAnnotations = Map.of("a1", "v1", "a2", "v2");
 
-        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnnotations = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podLabels = Map.of("l3", "v3", "l4", "v4");
+        Map<String, String> podAnnotations = Map.of("a3", "v3", "a4", "v4");
 
-        Map<String, String> saLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> saAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> saLabels = Map.of("l5", "v5", "l6", "v6");
+        Map<String, String> saAnnotations = Map.of("a5", "v5", "a6", "v6");
 
-        Map<String, String> rLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> rAnnotations = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> rLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> rAnnotations = Map.of("a7", "v7", "a8", "v8");
 
         Toleration toleration = new TolerationBuilder()
                 .withEffect("NoSchedule")
@@ -785,14 +785,14 @@ public class EntityOperatorTest {
     @ParallelTest
     public void testFeatureGateEnvVars() {
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+ContinueReconciliationOnManualRollingUpdateFailure")
+                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "-ContinueReconciliationOnManualRollingUpdateFailure")
                 .build();
 
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, SHARED_ENV_PROVIDER, config);
         Deployment dep = eo.generateDeployment(Map.of(), false, null, null);
 
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().filter(env -> "STRIMZI_FEATURE_GATES".equals(env.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("+ContinueReconciliationOnManualRollingUpdateFailure"));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getEnv().stream().filter(env -> "STRIMZI_FEATURE_GATES".equals(env.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("+ContinueReconciliationOnManualRollingUpdateFailure"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream().filter(env -> "STRIMZI_FEATURE_GATES".equals(env.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("-ContinueReconciliationOnManualRollingUpdateFailure"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getEnv().stream().filter(env -> "STRIMZI_FEATURE_GATES".equals(env.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("-ContinueReconciliationOnManualRollingUpdateFailure"));
     }
 
     ////////////////////

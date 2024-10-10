@@ -9,12 +9,12 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.NamespaceStatus;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -198,8 +198,8 @@ public class NamespaceManager {
      * Deletes Namespace with {@param namespaceName}, waits for its deletion, and in case that {@param collectorElement}
      * is not {@code null}, removes the Namespace from the {@link #MAP_WITH_SUITE_NAMESPACES}.
      *
-     * @param namespaceName
-     * @param collectorElement
+     * @param namespaceName     Name of the Namespace that should be deleted
+     * @param collectorElement  Collector element for removing the Namespace from the set
      */
     public void deleteNamespaceWithWaitAndRemoveFromSet(String namespaceName, CollectorElement collectorElement) {
         deleteNamespaceWithWait(namespaceName);

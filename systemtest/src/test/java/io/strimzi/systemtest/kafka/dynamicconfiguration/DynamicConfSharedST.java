@@ -34,8 +34,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static io.strimzi.systemtest.TestConstants.DYNAMIC_CONFIGURATION;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.DYNAMIC_CONFIGURATION;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -196,7 +196,7 @@ public class DynamicConfSharedST extends AbstractST {
     }
 
     /**
-     * Method, which randomly choose 3 dynamic properties for verification from @see{testCases}. In this case we are ok
+     * Method, which randomly choose 3 dynamic properties for verification from {@param testCases}. In this case we are ok
      * with stochastic selection, because we don't care, which configuration is used. Furthermore, it's the same path
      * of code (i.e., same CFG (control flow graph), which does not triggers RollingUpdate).
      * @param testCases test cases, where each consist of one dynamic property

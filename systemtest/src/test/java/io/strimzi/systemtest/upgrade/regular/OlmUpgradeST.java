@@ -9,8 +9,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -30,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,10 +36,11 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestConstants.OLM_UPGRADE;
+import static io.strimzi.systemtest.TestTags.OLM_UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.not;
 
 
 /**
@@ -50,19 +49,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests in this class use OLM for install cluster operator.
  */
 @Tag(OLM_UPGRADE)
-@KRaftNotSupported("Strimzi and Kafka downgrade is not supported with KRaft mode")
 public class OlmUpgradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(OlmUpgradeST.class);
     private final OlmVersionModificationData olmUpgradeData = new VersionModificationDataLoader(ModificationType.OLM_UPGRADE).getOlmUpgradeData();
-    @Test
+
+    @IsolatedTest
     void testStrimziUpgrade() throws IOException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final String toVersion = olmUpgradeData.getToVersion();
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), CO_NAMESPACE);
         final String fromVersion = olmUpgradeData.getFromVersion();
 
         LOGGER.info("====================================================================================");
-        LOGGER.info("---------------- Updating Cluster Operator version " + fromVersion + "=>" + toVersion + " -----------------");
+        LOGGER.info("---------------- Updating Cluster Operator version " + fromVersion + " => HEAD -----------------");
         LOGGER.info("====================================================================================");
         LOGGER.info("-------------------------- Upgrade data used in this test --------------------------");
         LOGGER.info(olmUpgradeData.toString());
@@ -77,9 +75,9 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         File dir = FileUtils.downloadAndUnzip(olmUpgradeData.getFromUrl());
         File kafkaYaml = new File(dir, olmUpgradeData.getFromExamples() + "/examples/kafka/kafka-persistent.yaml");
 
-        LOGGER.info("Deploying Kafka from file: {}", kafkaYaml.getPath());
-        KubeClusterResource.cmdKubeClient().create(kafkaYaml);
-        waitForReadinessOfKafkaCluster();
+        LOGGER.info("Deploying Kafka in Namespace: {} from file: {}", CO_NAMESPACE, kafkaYaml.getPath());
+        KubeClusterResource.cmdKubeClient(CO_NAMESPACE).create(kafkaYaml);
+        waitForReadinessOfKafkaCluster(CO_NAMESPACE);
 
         // Create KafkaTopic
         final String topicUpgradeName = "topic-upgrade";
@@ -89,7 +87,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         KafkaTopic kafkaUpgradeTopic = new YAMLMapper().readValue(new File(dir, olmUpgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml"), KafkaTopic.class);
         kafkaUpgradeTopic = new KafkaTopicBuilder(kafkaUpgradeTopic)
             .editMetadata()
-                .withNamespace(TestConstants.CO_NAMESPACE)
+                .withNamespace(CO_NAMESPACE)
                 .withName(topicUpgradeName)
             .endMetadata()
             .editSpec()
@@ -103,7 +101,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(TestConstants.CO_NAMESPACE)
+            .withNamespaceName(CO_NAMESPACE)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
             .withTopicName(topicUpgradeName)
             .withMessageCount(testStorage.getMessageCount())
@@ -112,42 +110,41 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
 
-        String clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
+        String clusterOperatorDeploymentName = ResourceManager.kubeClient().namespace(CO_NAMESPACE).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         LOGGER.info("Old deployment name of Cluster Operator is {}", clusterOperatorDeploymentName);
 
         // ======== Cluster Operator upgrade starts ========
-        makeSnapshots();
+        makeComponentsSnapshots(CO_NAMESPACE);
 
         OlmConfiguration upgradeOlmConfig = new OlmConfigurationBuilder(clusterOperator.getOlmResource().getOlmConfiguration())
             .withChannelName("stable")
-            .withOperatorVersion(toVersion)
             .build();
 
         // Cluster Operator upgrade
-        clusterOperator.upgradeClusterOperator(upgradeOlmConfig);
+        clusterOperator.upgradeClusterOperator(CO_NAMESPACE, upgradeOlmConfig);
 
-        clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
+        clusterOperatorDeploymentName = ResourceManager.kubeClient().namespace(CO_NAMESPACE).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         LOGGER.info("New deployment name of Cluster Operator is {}", clusterOperatorDeploymentName);
         ResourceManager.setCoDeploymentName(clusterOperatorDeploymentName);
 
         // Verification that Cluster Operator has been upgraded to a correct version
-        String afterUpgradeVersionOfCo = kubeClient().getCsvWithPrefix(TestConstants.CO_NAMESPACE, upgradeOlmConfig.getOlmAppBundlePrefix()).getSpec().getVersion();
-        assertThat(afterUpgradeVersionOfCo, is(toVersion));
+        String afterUpgradeVersionOfCo = kubeClient().getCsvWithPrefix(CO_NAMESPACE, upgradeOlmConfig.getOlmAppBundlePrefix()).getSpec().getVersion();
+        assertThat(afterUpgradeVersionOfCo, is(not(fromVersion)));
 
         // Wait for Rolling Update to finish
-        controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, controllerSelector, 3, controllerPods);
-        brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, brokerSelector, 3, brokerPods);
-        eoPods = DeploymentUtils.waitTillDepHasRolled(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(CO_NAMESPACE, controllerSelector, 3, controllerPods);
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(CO_NAMESPACE, brokerSelector, 3, brokerPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
         // ======== Cluster Operator upgrade ends ========
 
         // ======== Kafka upgrade starts ========
-        logPodImages(TestConstants.CO_NAMESPACE);
-        changeKafkaAndLogFormatVersion(olmUpgradeData);
-        logPodImages(TestConstants.CO_NAMESPACE);
+        logComponentsPodImages(CO_NAMESPACE);
+        changeKafkaVersion(CO_NAMESPACE, olmUpgradeData);
+        logComponentsPodImages(CO_NAMESPACE);
         // ======== Kafka upgrade ends ========
 
         // Wait for messages of previously created clients
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(CO_NAMESPACE, testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @BeforeAll

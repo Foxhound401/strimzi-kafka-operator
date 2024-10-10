@@ -56,9 +56,11 @@ import java.util.stream.Collectors;
  *
  * <li>add support for operator-side {@linkplain StatusUtils#validate(Reconciliation, CustomResource)} validation}.
  *     This can be used to automatically log warnings about source resources which used deprecated part of the CR API.
- *ą
  * </ul>
+ *
  * @param <T> The Java representation of the Kubernetes resource, e.g. {@code Kafka} or {@code KafkaConnect}
+ * @param <P> The Java representation of the Kubernetes resource .spec section
+ * @param <S> The Java representation of the Kubernetes resource .status section
  * @param <O> The "Resource Operator" for the source resource type. Typically, this will be some instantiation of
  *           {@link io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator}.
  */
@@ -466,6 +468,14 @@ public abstract class AbstractOperator<
         return Future.succeededFuture();
     }
 
+    /**
+     * Find the names of all resources that should be reconciled
+     *
+     * @param namespace The namespace where the resources should be looked up
+     *
+     * @return  A future with a set of resources found in given namespace
+     */
+    @Override
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
         return resourceOperator.listAsync(namespace, selector())
                 .map(resourceList ->

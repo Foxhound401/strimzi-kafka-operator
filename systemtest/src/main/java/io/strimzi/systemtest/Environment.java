@@ -117,7 +117,7 @@ public class Environment {
     private static final String OLM_SOURCE_NAME_ENV = "OLM_SOURCE_NAME";
     private static final String OLM_SOURCE_NAMESPACE_ENV = "OLM_SOURCE_NAMESPACE";
     private static final String OLM_APP_BUNDLE_PREFIX_ENV = "OLM_APP_BUNDLE_PREFIX";
-    private static final String OLM_OPERATOR_VERSION_ENV = "OLM_OPERATOR_VERSION";
+    private static final String OLM_OPERATOR_CHANNEL_ENV = "OLM_OPERATOR_CHANNEL";
     /**
      * Allows network policies
      */
@@ -184,6 +184,7 @@ public class Environment {
      * Env var for specify base image for building Kafka with tiered storage in system tests
      */
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV = "KAFKA_TIERED_STORAGE_BASE_IMAGE";
+    public static final String KANIKO_IMAGE_ENV = "KANIKO_IMAGE";
 
     /**
      * Defaults
@@ -201,6 +202,7 @@ public class Environment {
     public static final String OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT = TestConstants.STRIMZI_DEPLOYMENT_NAME;
     public static final String OLM_SOURCE_NAME_DEFAULT = "community-operators";
     public static final String OLM_APP_BUNDLE_PREFIX_DEFAULT = "strimzi-cluster-operator";
+    public static final String OLM_OPERATOR_CHANNEL_DEFAULT = "stable";
     private static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT = true;
     private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
     private static final boolean LB_FINALIZERS_DEFAULT = false;
@@ -211,13 +213,13 @@ public class Environment {
     private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.8.0";
     public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.9.1";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
-    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.43.0";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
     public static final String IP_FAMILY_VERSION_6 = "ipv6";
     public static final String IP_FAMILY_DUAL_STACK = "dual";
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka:latest-kafka-" + ST_KAFKA_VERSION_DEFAULT;
+    public static final String KANIKO_IMAGE_DEFAULT = "gcr.io/kaniko-project/executor:v1.23.2";
 
     /**
      * Set values
@@ -234,7 +236,7 @@ public class Environment {
     public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
     public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
-    public static final boolean STRIMZI_USE_KRAFT_IN_TESTS = getOrDefault(STRIMZI_USE_KRAFT_IN_TESTS_ENV, Boolean::parseBoolean, false);
+    public static final boolean STRIMZI_USE_KRAFT_IN_TESTS = getOrDefault(STRIMZI_USE_KRAFT_IN_TESTS_ENV, Boolean::parseBoolean, true);
     public static final boolean STRIMZI_USE_NODE_POOLS_IN_TESTS = getOrDefault(STRIMZI_USE_NODE_POOLS_IN_TESTS_ENV, Boolean::parseBoolean, true);
     public static final NodePoolsRoleMode STRIMZI_NODE_POOLS_ROLE_MODE = getOrDefault(STRIMZI_NODE_POOLS_ROLE_MODE_ENV, value -> NodePoolsRoleMode.valueOf(value.toUpperCase(Locale.ENGLISH)), NodePoolsRoleMode.SEPARATE);
 
@@ -257,7 +259,7 @@ public class Environment {
     public static final String OLM_SOURCE_NAME = getOrDefault(OLM_SOURCE_NAME_ENV, OLM_SOURCE_NAME_DEFAULT);
     public static final String OLM_SOURCE_NAMESPACE = getOrDefault(OLM_SOURCE_NAMESPACE_ENV, OpenShift.OLM_SOURCE_NAMESPACE);
     public static final String OLM_APP_BUNDLE_PREFIX = getOrDefault(OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX_DEFAULT);
-    public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, OLM_OPERATOR_VERSION_DEFAULT);
+    public static final String OLM_OPERATOR_CHANNEL = getOrDefault(OLM_OPERATOR_CHANNEL_ENV, OLM_OPERATOR_CHANNEL_DEFAULT);
     // NetworkPolicy variable
     public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
     // Cluster Operator installation type variable
@@ -275,6 +277,7 @@ public class Environment {
     public static final String IP_FAMILY = getOrDefault(IP_FAMILY_ENV, IP_FAMILY_DEFAULT);
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV, KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT);
+    public static final String KANIKO_IMAGE = getOrDefault(KANIKO_IMAGE_ENV, KANIKO_IMAGE_DEFAULT);
 
     private Environment() { }
 
@@ -401,11 +404,11 @@ public class Environment {
         return hostname;
     }
 
-    public static String getImageOutputRegistry(String namespace, String imageName, String tag) {
+    public static String getImageOutputRegistry(String namespaceName, String imageName, String tag) {
         if (!Environment.CONNECT_BUILD_IMAGE_PATH.isEmpty()) {
             return Environment.CONNECT_BUILD_IMAGE_PATH + ":" + tag;
         } else {
-            return getImageOutputRegistry() + "/" + namespace + "/" + imageName + ":" + tag;
+            return getImageOutputRegistry() + "/" + namespaceName + "/" + imageName + ":" + tag;
         }
     }
 

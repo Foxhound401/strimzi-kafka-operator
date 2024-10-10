@@ -37,7 +37,7 @@ public class DeploymentUtils {
      * Log actual status of deployment with pods
      * @param deployment - every Deployment, that HasMetadata and has status (fabric8 status)
      **/
-    public static void logCurrentDeploymentStatus(Deployment deployment, String namespaceName) {
+    public static void logCurrentDeploymentStatus(String namespaceName, Deployment deployment) {
         if (deployment != null) {
             String kind = deployment.getKind();
             String name = deployment.getMetadata().getName();
@@ -162,7 +162,7 @@ public class DeploymentUtils {
         TestUtils.waitFor("readiness of Deployment: " + namespaceName + "/" + deploymentName,
             TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient(namespaceName).getDeploymentStatus(namespaceName, deploymentName),
-            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(namespaceName, deploymentName), namespaceName));
+            () -> DeploymentUtils.logCurrentDeploymentStatus(namespaceName, kubeClient().getDeployment(namespaceName, deploymentName)));
 
         LOGGER.info("Deployment: {}/{} is ready", namespaceName, deploymentName);
         return true;
@@ -179,7 +179,7 @@ public class DeploymentUtils {
 
         LOGGER.info("Waiting for {} Pod(s) of Deployment: {}/{} to be ready", expectPods, namespaceName, deploymentName);
         PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(namespaceName, deploymentName), expectPods, true,
-            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient(namespaceName).getDeployment(namespaceName, deploymentName), namespaceName));
+            () -> DeploymentUtils.logCurrentDeploymentStatus(namespaceName, kubeClient(namespaceName).getDeployment(namespaceName, deploymentName)));
         LOGGER.info("Deployment: {}/{} is ready", namespaceName, deploymentName);
         return true;
     }
@@ -202,5 +202,10 @@ public class DeploymentUtils {
                 }
             });
         LOGGER.debug("Deployment: {}/{} was deleted", namespaceName, name);
+    }
+
+    public static void waitForCreationOfDeploymentWithPrefix(String namespaceName, String deploymentNamePrefix) {
+        TestUtils.waitFor(String.join("creation of Deployment with prefix: %s in Namespace: %s", deploymentNamePrefix, namespaceName), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
+            () -> kubeClient().getDeploymentNameByPrefix(namespaceName, deploymentNamePrefix) != null);
     }
 }

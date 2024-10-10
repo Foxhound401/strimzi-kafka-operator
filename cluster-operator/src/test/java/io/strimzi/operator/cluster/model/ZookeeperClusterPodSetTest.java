@@ -22,9 +22,9 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
-import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -142,11 +142,11 @@ public class ZookeeperClusterPodSetTest {
     @ParallelTest
     public void testCustomizedPodSet()   {
         // Prepare various template values
-        Map<String, String> spsLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> spsAnnos = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> spsLabels = Map.of("l1", "v1", "l2", "v2");
+        Map<String, String> spsAnnos = Map.of("a1", "v1", "a2", "v2");
 
-        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnnos = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podLabels = Map.of("l3", "v3", "l4", "v4");
+        Map<String, String> podAnnos = Map.of("a3", "v3", "a4", "v4");
 
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")

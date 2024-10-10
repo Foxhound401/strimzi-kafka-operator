@@ -9,10 +9,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import io.strimzi.crdgenerator.annotations.OneOf;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -29,6 +32,9 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"name", "secret", "configMap"})
+@OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("secret")), @OneOf.Alternative(@OneOf.Alternative.Property("configMap"))})
+@Deprecated
+@DeprecatedType(replacedWithType = AdditionalVolume.class)
 @EqualsAndHashCode
 @ToString
 public class ExternalConfigurationVolumeSource implements UnknownPropertyPreserving {
@@ -46,8 +52,6 @@ public class ExternalConfigurationVolumeSource implements UnknownPropertyPreserv
     public void setName(String name) {
         this.name = name;
     }
-
-    // TODO: We should make it possible to generate a CRD configuring that exactly one of secret and configMap has to be defined.
 
     @Description("Reference to a key in a Secret. " +
             "Exactly one Secret or ConfigMap has to be specified.")

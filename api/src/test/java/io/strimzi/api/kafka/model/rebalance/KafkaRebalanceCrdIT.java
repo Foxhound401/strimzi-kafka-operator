@@ -4,9 +4,12 @@
  */
 package io.strimzi.api.kafka.model.rebalance;
 
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
+import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -22,12 +25,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * validation done by K8S.
  */
 public class KafkaRebalanceCrdIT extends AbstractCrdIT {
-
     public static final String NAMESPACE = "kafkarebalance-crd-it";
 
     @Test
     void testKafkaRebalanceIsNotScaling() {
-        assertThrows(KubeClusterException.class, () -> createScaleDelete(KafkaRebalance.class, "KafkaRebalance.yaml"));
+        assertThrows(KubernetesClientException.class, () -> createScaleDelete(KafkaRebalance.class, "KafkaRebalance.yaml"));
     }
 
     @Test
@@ -68,7 +70,7 @@ public class KafkaRebalanceCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaRebalanceWrongMode() {
         Throwable exception = assertThrows(
-                KubeClusterException.class,
+                KubernetesClientException.class,
                 () -> createDeleteCustomResource("KafkaRebalance-wrong-mode.yaml"));
 
         assertThat(exception.getMessage(), containsString("spec.mode: Unsupported value: \"wrong-mode\": supported values: \"full\", \"add-brokers\", \"remove-brokers\""));
@@ -76,20 +78,15 @@ public class KafkaRebalanceCrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_REBALANCE);
-        cluster.waitForCustomResourceDefinition("kafkarebalances.kafka.strimzi.io");
-        cluster.createNamespace(NAMESPACE);
-
-        try {
-            Thread.sleep(1_000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
+        CrdUtils.createCrd(client, KafkaRebalance.CRD_NAME, CrdUtils.CRD_KAFKA_REBALANCE);
+        TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        cluster.deleteCustomResources();
-        cluster.deleteNamespaces();
+        CrdUtils.deleteCrd(client, KafkaRebalance.CRD_NAME);
+        TestUtils.deleteNamespace(client, NAMESPACE);
+        client.close();
     }
 }

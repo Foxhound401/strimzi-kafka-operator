@@ -2,7 +2,6 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,8 +48,8 @@ public class KafkaConfiguration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
 
     static {
-        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(KafkaClusterSpec.FORBIDDEN_PREFIXES);
-        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesOrOptionsToList(KafkaClusterSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
     }
 
     /**
@@ -122,6 +121,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
             "node.id",
             "num.io.threads",
             "num.network.threads",
+            "num.partitions",
             "offsets.topic.replication.factor",
             "principal.builder.class",
             "process.roles",
@@ -212,11 +212,11 @@ public class KafkaConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS);
+        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, List.of(), Map.of());
     }
 
     private KafkaConfiguration(Reconciliation reconciliation, String configuration, List<String> forbiddenPrefixes) {
-        super(reconciliation, configuration, forbiddenPrefixes);
+        super(reconciliation, configuration, forbiddenPrefixes, List.of(), List.of(), Map.of());
     }
 
 
@@ -287,7 +287,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
         Map<String, ConfigModel> configModel = readConfigModel(kafkaVersion);
         Set<String> result = new HashSet<>();
         for (Map.Entry<String, String> e :this.asOrderedProperties().asMap().entrySet()) {
-            if (!configModel.containsKey(e.getKey())) {
+            if (isCustomConfigurationOption(e.getKey(), configModel)) {
                 result.add(e.getKey() + "=" + e.getValue());
             }
         }
@@ -316,6 +316,21 @@ public class KafkaConfiguration extends AbstractConfiguration {
      * @return  True if the configuration is empty. False otherwise.
      */
     public boolean isEmpty() {
-        return this.asOrderedProperties().asMap().size() == 0;
+        return this.asOrderedProperties().asMap().isEmpty();
+    }
+
+    /**
+     * Checks if the Kafka configuration option is part of the Kafka configuration or is a custom option not recognized
+     * by Kafka broker configuration APIs. Custom options can be for example options used by plugins etc. But right now,
+     * also the options prefixed with the listener prefix as considered custom by this method as well (which is correct
+     * for the time being as we anyway do a rolling update when they change).
+     *
+     * @param optionName    Name of the option to check
+     * @param configModel   Configuration model for given Kafka version
+     *
+     * @return  True if entry is custom (not default). False otherwise.
+     */
+    public static boolean isCustomConfigurationOption(String optionName, Map<String, ConfigModel> configModel) {
+        return !configModel.containsKey(optionName);
     }
 }
